@@ -3,17 +3,12 @@ WebGL Forward+ and Clustered Deferred Shading
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 4**
 
-* (TODO) YOUR NAME HERE
-* Tested on: (TODO) **Google Chrome 222.2** on
-  Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+* Rin Fukuoka
+* Tested on: Windows 11, i9-13900HX @ 2.20 GHz, 32GB RAM, RTX 4080 Laptop GPU 12GB
 
-### Live Demo
+### Live Demo HERE 
+![alt text](<images/image0.png>)
 
-[![](img/thumb.png)](http://TODO.github.io/Project4-WebGPU-Forward-Plus-and-Clustered-Deferred)
-
-### Demo Video/GIF
-
-[![](img/video.mp4)](TODO)
 In this project, I implemented three different rendering methods to render a scene with many lights using TypeScript and WebGPU. Below are my implementations, each building on the previous one:
 
 **Naive Forward:** Everything is rendered in one pass. We must compute lighting for every fragment in the scene (including ones later hidden by closer geometry), and every time lighting is calculated, we must iterate through all lights in the scene.
@@ -25,17 +20,29 @@ In this project, I implemented three different rendering methods to render a sce
 ### Performance Analysis
 All tests were run on the Sponza scene at a 2560 × 1350 canvas resolution. Each value is the average frame time (ms) over 30 frames. Workgroup size was 128 the light movement/clustering compute pass. 
 
+
+
 #### Number of Lights 
-used a 16 × 9 × 24 cluster grid with max lights per cluster of 512.
 
-Naive rendering scales linearly with light count. This is expected, given every fragment loops over all N lights, so the per-frame cost is O(pixels × lights). 
+![alt text](images/graph0.png)
+Tested with a 16 × 9 × 24 cluster grid and 128 max lights per cluster.
 
-Forward+ and Clustered Deferred are much faster at every light count. At 5000 lights, Forward+ is about 14× faster than Naive, because each fragment only loops over the lights in its own cluster instead of the full light set. Forward+ stays consistently fast up to ~1000 lights, then slows down from 2000 lights. This is likely because more lights overlap each cluster, so the per-cluster lists grow. Each fragment's loop gets longer, and the clustering compute pass and cluster buffer reads cost more. Forward+ also shades fragments before the depth test resolves visibility, so overdrawn fragments run the light loop and then get discarded by later geometry.
+Naive rendering scales almost linearly with light count. This makes sense, given every fragment loops over all N lights, so the per-frame cost is O(pixels × lights). 
 
-Clustered Deferred removes that overdraw cost. The geometry pass only writes albedo, normal and position to the G-buffer, and lighting runs once per pixel in a fullscreen pass, using only the lights in that pixel's cluster. It stays consistently fast from 500 to 5000 lights. The trade-off is the extra G-buffer memory and bandwidth but the overall performance is successful. 
+Forward+ and Clustered Deferred are much faster at every light count. At 5000 lights, they are about 40-50× faster than Naive, since each fragment only loops over the lights in its own cluster.
+The two methods perform similarly up to about 2000 lights, after which Clustered Deferred is faster. With more lights, each cluster's light list grows, which makes every shaded fragment's loop more expensive. Forward+ runs this loop for every fragment it rasterizes, including overdrawn ones that later get covered by closer geometry. Clustered Deferred writes geometry to the G-buffer first and then runs the light loop exactly once per visible pixel, so the growing per-light cost is paid far fewer times. At low light counts, the G-buffer pass's extra memory and bandwidth roughly cancels out this advantage, which is why the two likely match early on. 
 
 
+####  Max Lights per Cluster Artifacts 
+![alt text](images/image.png)
+As shown in the image, grid-like artifacts can appear when there are many lights. Each cluster has a maxLightsPerCluster cap, so when more lights overlap a cluster than the cap allows, the extras are dropped. This leaves sharp edge artifacts in the lighting along cluster boundaries. Raising maxLightsPerCluster removes the artifacts, but at the cost of performance. 
 
+#### Grid Size 
+![alt text](images/graph1.png)
+Used forward plus rendering with 5000 lights. Tested for both 512 / 128 max lights per cluster. 
+
+With a 512 max lights per cluster cap, finer grids run faster. Larger clusters overlap more lights, so each fragment has to loop over hundreds of lights. Smaller clusters keep those per-cluster light numbers small. 
+With a 128 max lights per cluster cap, frame times are much lower, but the speedup also comes from dropping lights. Coarse clusters overflow the max lights cap, so some lights are never shaded and grid artifacts appear, as discussed above. Since the per-cluster loops are already capped and cheap, the clustering compute pass becomes the bottleneck at the finest grid of 32x16x48. 
 
 
 ### Credits
