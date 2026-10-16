@@ -14,14 +14,29 @@ WebGL Forward+ and Clustered Deferred Shading
 ### Demo Video/GIF
 
 [![](img/video.mp4)](TODO)
+In this project, I implemented three different rendering methods to render a scene with many lights using TypeScript and WebGPU. Below are my implementations, each building on the previous one:
 
-### (TODO: Your README)
+**Naive Forward:** Everything is rendered in one pass. We must compute lighting for every fragment in the scene (including ones later hidden by closer geometry), and every time lighting is calculated, we must iterate through all lights in the scene.
 
-*DO NOT* leave the README to the last minute! It is a crucial part of the
-project, and we will not be able to grade you without a good README.
+**Forward+/Clustered Forward:** We divide the viewing frustum into a 3D grid of clusters along x, y, and z. In the compute pass, we calculate the lights each cluster contains, and in the shading pass, each fragment only considers lights in the cluster it falls in.
 
-This assignment has a considerable amount of performance analysis compared
-to implementation work. Complete the implementation early to leave time!
+**Clustered Deferred:** In addition to the clustering, we implement a G-buffer. We first calculate a G-buffer pass to store the position, color, and normal of each pixel into textures. In the final shading pass, we read from these textures and shade using the clusters. Thus, we only need to compute expensive lighting on visible pixels rather than all geometry, and only consider lights in each pixel's cluster.
+ 
+### Performance Analysis
+All tests were run on the Sponza scene at a 2560 × 1350 canvas resolution. Each value is the average frame time (ms) over 30 frames. Workgroup size was 128 the light movement/clustering compute pass. 
+
+#### Number of Lights 
+used a 16 × 9 × 24 cluster grid with max lights per cluster of 512.
+
+Naive rendering scales linearly with light count. This is expected, given every fragment loops over all N lights, so the per-frame cost is O(pixels × lights). 
+
+Forward+ and Clustered Deferred are much faster at every light count. At 5000 lights, Forward+ is about 14× faster than Naive, because each fragment only loops over the lights in its own cluster instead of the full light set. Forward+ stays consistently fast up to ~1000 lights, then slows down from 2000 lights. This is likely because more lights overlap each cluster, so the per-cluster lists grow. Each fragment's loop gets longer, and the clustering compute pass and cluster buffer reads cost more. Forward+ also shades fragments before the depth test resolves visibility, so overdrawn fragments run the light loop and then get discarded by later geometry.
+
+Clustered Deferred removes that overdraw cost. The geometry pass only writes albedo, normal and position to the G-buffer, and lighting runs once per pixel in a fullscreen pass, using only the lights in that pixel's cluster. It stays consistently fast from 500 to 5000 lights. The trade-off is the extra G-buffer memory and bandwidth but the overall performance is successful. 
+
+
+
+
 
 ### Credits
 
