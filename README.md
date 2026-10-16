@@ -6,8 +6,12 @@ WebGL Forward+ and Clustered Deferred Shading
 * Rin Fukuoka
 * Tested on: Windows 11, i9-13900HX @ 2.20 GHz, 32GB RAM, RTX 4080 Laptop GPU 12GB
 
-### [Live Demo HERE](https://rf1424.github.io/Project4-WebGPU-Forward-Plus-and-Clustered-Deferred)
+
 ![alt text](<images/image0.png>)
+
+https://github.com/user-attachments/assets/31f155c5-5517-4c9f-b889-ef73db215f22
+
+### [Live Demo HERE](https://rf1424.github.io/Project4-WebGPU-Forward-Plus-and-Clustered-Deferred)
 
 In this project, I implemented three different rendering methods to render a scene with many lights using TypeScript and WebGPU. Below are my implementations, each building on the previous one:
 
