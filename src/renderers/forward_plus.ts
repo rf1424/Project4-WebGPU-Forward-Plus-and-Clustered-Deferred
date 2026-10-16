@@ -136,9 +136,9 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                     renderPass.drawIndexed(primitive.numIndices);
                 });
         
-                renderPass.end();
+        renderPass.end();
         
-                renderer.device.queue.submit([encoder.finish()]);
+        renderer.device.queue.submit([encoder.finish()]);
         
     }
 }

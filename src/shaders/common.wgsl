@@ -41,3 +41,19 @@ fn calculateLightContrib(light: Light, posWorld: vec3f, nor: vec3f) -> vec3f {
     let lambert = max(dot(nor, normalize(vecToLight)), 0.f);
     return light.color * lambert * rangeAttenuation(distToLight);
 }
+
+
+fn getClusterFromPt(uv: vec2f, pos: vec3f, view: mat4x4f, 
+        near: f32, far: f32) -> u32 {
+    let grid = vec3f(${clusterX}, ${clusterY}, ${clusterZ});
+    let cx = u32(uv.x * grid.x);
+    let cy = u32((1.0 - uv.y) * grid.y);
+
+    let viewZ = -(view * vec4f(pos, 1.0)).z;
+    let cz = u32((viewZ - near) / (far - near) * grid.z);
+
+    let clusterIdx = min(cx, ${clusterX} - 1)
+               + min(cy, ${clusterY} - 1) * ${clusterX}
+               + min(cz, ${clusterZ} - 1) * ${clusterX} * ${clusterY};
+    return clusterIdx;
+}
