@@ -25,6 +25,7 @@ fn main(in: VertexInput) -> VertexOutput
 
     var out: VertexOutput;
     out.fragPos = cameraUniforms.viewProj * modelPos; 
+    out.pos = modelPos.xyz / modelPos.w;
     out.nor = in.nor;
     out.uv = in.uv;
     return out;

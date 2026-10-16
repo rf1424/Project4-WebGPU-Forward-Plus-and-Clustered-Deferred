@@ -3,15 +3,27 @@ import { toRadians } from "../math_util";
 import { device, canvas, fovYDegrees, aspectRatio } from "../renderer";
 
 class CameraUniforms {
-    readonly buffer = new ArrayBuffer(16 * 4);
+    readonly buffer = new ArrayBuffer(52 * 4);
     private readonly floatView = new Float32Array(this.buffer);
 
     set viewProjMat(mat: Float32Array) {
         this.floatView.set(mat, 0);
-
     }
-
-    // TODO-2: add extra functions to set values needed for light clustering here
+    set viewMat(mat: Float32Array) {
+        this.floatView.set(mat, 16);
+    }
+    set InvProjMat(mat: Float32Array) {
+        this.floatView.set(mat, 32);
+    }
+    set screenSize(size: Float32Array) {
+        this.floatView.set(size, 48);
+    }
+    set near(near: number) {
+        this.floatView[50] = near;
+    }
+    set far(far: number) {
+        this.floatView[51] = far;
+    }
 }
 
 export class Camera {
@@ -131,8 +143,11 @@ export class Camera {
         const viewProjMat = mat4.mul(this.projMat, viewMat);
         // set `this.uniforms.viewProjMat` to the newly calculated view proj mat
         this.uniforms.viewProjMat = viewProjMat;
-  
-        // TODO-2: write to extra buffers needed for light clustering here
+        this.uniforms.viewMat = viewMat;
+        this.uniforms.InvProjMat = mat4.invert(this.projMat);
+        this.uniforms.screenSize = new Float32Array([canvas.width, canvas.height]);
+        this.uniforms.near = Camera.nearPlane;
+        this.uniforms.far = 50.0; //  ~ object max depth ?
 
         device.queue.writeBuffer(this.uniformsBuffer, 0, this.uniforms.buffer);
     }
